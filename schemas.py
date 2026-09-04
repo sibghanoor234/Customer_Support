@@ -9,3 +9,4 @@ class TicketsInput(BaseModel):
     category:Optional[str] = None
     priority: Literal["low", "Medium", "High","Urgent"]
     status: Literal["open", "closed", "In-progress"]
+    description:Optional[str] = None

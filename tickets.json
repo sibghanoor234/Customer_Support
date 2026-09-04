@@ -130,5 +130,14 @@
         "priority": "medium",
         "status": "closed",
         "created_at": "2026-09-03T10:00:00"
+    },
+    {
+        "ticket_id": 13,
+        "customer_name": "string",
+        "category": "string",
+        "priority": "low",
+        "description": null,
+        "created_at": "2026-09-04T12:03:46.168450",
+        "status": "open"
     }
 ]

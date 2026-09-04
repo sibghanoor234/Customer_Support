@@ -1,12 +1,16 @@
 import json
 
 from datetime import datetime
+from fastapi import Request
+from config.templates_config import templates
+from fastapi.staticfiles import StaticFiles
+
 from fastapi import FastAPI, status
 from starlette.responses import JSONResponse
 from utils import read_tickets_json_file
 from schemas import TicketsInput
 app=FastAPI()
-
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/return-all-tickets")
 def return_all_tickets():
@@ -64,11 +68,11 @@ def get_tickets(status: str = None,
 def create_ticket(ticket: TicketsInput):
     tickets = read_tickets_json_file()
     if tickets:
-        new_ticket_id = tickets[-1]["ticket_id"] + 1
+        new_ticket_id = tickets[-1]["id"] + 1
     else:
         new_ticket_id = 1
     new_ticket = {
-        "ticket_id": new_ticket_id,
+        "id": new_ticket_id,
         "customer_name": ticket.customer_name,
         "category": ticket.category,
         "priority": ticket.priority,
@@ -202,6 +206,36 @@ def return_detail(tickets: TicketsInput):
                 "patient_detail": tickets
             }
         )
+################################################################# #
+@app.get("/dashboard")
+async def dashboard(request:Request, ):
+    tickets=read_tickets_json_file()
+    total_tickets = len(tickets)
+    category_percentage = {}
+    category_count = {}
+
+    for ticket in tickets:
+        category = ticket.get("category", "Unknown")
+
+        if category not in category_count:
+            category_count[category] = 0
+
+        category_count[category] += 1
+
+    for category, count in category_count.items():
+        percentage = (count / total_tickets) * 100
+        category_percentage[category] = round(percentage, 2)
+    ticket_category=[ticket['category']for ticket in tickets]
+    return templates.TemplateResponse(
+        request=request,
+        name="dashboard.html",
+        context={
+        "tickets":tickets,
+        "ticket_category":ticket_category,
+        "category_percentage":category_percentage,
+        "total_tickets":total_tickets
+         },
+    )
 
 
 
