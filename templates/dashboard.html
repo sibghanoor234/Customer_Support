@@ -121,7 +121,6 @@
                 <a class="dropdown-item" href="charts.html">
                   <span class="notification-title">Revenue target reached</span>
                   <span class="notification-time">32 minutes ago</span>
-                  {ticket_category}
                 </a>
                 <a class="dropdown-item" href="settings.html">
                   <span class="notification-title">Security review completed</span>
@@ -160,58 +159,29 @@
 
           </div>
 
-          <section class="row g-3 mt-1">
+          <section class="row g-3 mt-1 justify-content-center">
             <div class="col-12 col-xl-8">
-              <div class="panel h-100">
-                <div class="panel-header"><div><h2 class="h5 mb-1 section-title"><i class="bi bi-bar-chart-line" aria-hidden="true"></i><span>Revenue Trend</span></h2><p class="text-muted mb-0">Static chart component ready for Chart.js integration.</p></div></div>
-                <div class="chart-bars" aria-label="Revenue chart"><div class="chart-column bar-42"><span></span><small>Jan</small></div><div class="chart-column bar-58"><span></span><small>Feb</small></div><div class="chart-column bar-51"><span></span><small>Mar</small></div><div class="chart-column bar-72"><span></span><small>Apr</small></div><div class="chart-column bar-66"><span></span><small>May</small></div><div class="chart-column bar-83"><span></span><small>Jun</small></div></div>
-              </div>
             </div>
             <div class="col-12 col-xl-4">
               <div class="panel h-100">
-                <div class="col-12 col-xl-4">
-    <div class="panel h-100">
+                <div class="panel-header"><div><h2 class="h5 mb-1 section-title"><i class="bi bi-pie-chart" aria-hidden="true"></i><span>Channel Mix</span></h2><p class="text-muted mb-0">Revenue contribution by source.</p></div></div>
+                 <h2>Total Tickets</h2> <h1>{{ total_tickets }}</h1>
+                <div class="donut-chart mx-auto"><span>95%</span></div>
+                <div class="legend-list mt-4">
 
-        <div class="panel-header">
-            <div>
-                <h2 class="h5 mb-1 section-title">
-                    <i class="bi bi-pie-chart"></i>
-                    <span>Ticket Categories</span>
-                </h2>
+    {% for category, count in category_count.items() %}
 
-                <p class="text-muted mb-0">
-                    Percentage of tickets by category.
-                </p>
-            </div>
+        <div>
+            <span class="legend-dot bg-primary"></span>
+
+            <span>{{ category }}</span>
+
+            <strong>{{ category_percentage[category] }}%</strong>
         </div>
 
-        <div class="legend-list mt-4">
+    {% endfor %}
 
-<div class="col-12 col-xl-4">
-    <div class="panel h-100">
-
-        <div class="panel-header">
-            <div>
-                <h2 class="h5 mb-1 section-title">
-                    <i class="bi bi-pie-chart"></i>
-                    <span>Ticket Categories</span>
-                </h2>
-
-                <p class="text-muted mb-0">
-                    Tickets by category
-                </p>
-            </div>
-        </div>
-
-        <div id="categoryChart" class="mt-4"></div>
-
-    </div>
 </div>
-
-    </div>
-</div>
-                <div class="donut-chart mx-auto"><span>99%</span></div>
-                <div class="legend-list mt-4"><div><span class="legend-dot bg-primary"></span>Direct sales<strong>42%</strong></div><div><span class="legend-dot bg-success"></span>Marketplace<strong>26%</strong></div><div><span class="legend-dot bg-warning"></span>Partners<strong>18%</strong></div><div><span class="legend-dot bg-danger"></span>Other<strong>14%</strong></div></div>
               </div>
             </div>
           </section>

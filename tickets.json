@@ -139,5 +139,38 @@
         "description": null,
         "created_at": "2026-09-04T12:03:46.168450",
         "status": "open"
+    },
+    {
+        "id": 14,
+        "customer_name": "Ali ",
+        "email": "ali.khan@example.com",
+        "subject": "Unable to login",
+        "description": "I am unable to login to my account even though my password is correct.",
+        "category": "string",
+        "priority": "high",
+        "status": "open",
+        "created_at": "2026-09-01T09:15:00"
+    },
+    {
+        "id": 15,
+        "customer_name": "Ali ",
+        "email": "ali.khan@example.com",
+        "subject": "Unable to login",
+        "description": "I am unable to login to my account even though my password is correct.",
+        "category": "authentication",
+        "priority": "high",
+        "status": "open",
+        "created_at": "2026-09-01T09:15:00"
+    },
+    {
+        "id": 16,
+        "customer_name": "Ali ",
+        "email": "ali.khan@example.com",
+        "subject": "Unable to login",
+        "description": "I am unable to login to my account even though my password is correct.",
+        "category": "authentication",
+        "priority": "high",
+        "status": "open",
+        "created_at": "2026-09-01T09:15:00"
     }
 ]

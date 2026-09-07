@@ -210,30 +210,31 @@ def return_detail(tickets: TicketsInput):
 @app.get("/dashboard")
 async def dashboard(request:Request, ):
     tickets=read_tickets_json_file()
+    print("TOTAL =", len(tickets))
     total_tickets = len(tickets)
-    category_percentage = {}
     category_count = {}
 
     for ticket in tickets:
-        category = ticket.get("category", "Unknown")
+        category = ticket["category"].strip().lower()
 
         if category not in category_count:
-            category_count[category] = 0
+            category_count[category] =0
 
         category_count[category] += 1
-
+    print("category_count",category_count)
+    print("CATEGORY TOTAL =", sum(category_count.values()))
+    category_percentage={}
     for category, count in category_count.items():
         percentage = (count / total_tickets) * 100
         category_percentage[category] = round(percentage, 2)
-    ticket_category=[ticket['category']for ticket in tickets]
     return templates.TemplateResponse(
         request=request,
         name="dashboard.html",
         context={
         "tickets":tickets,
-        "ticket_category":ticket_category,
-        "category_percentage":category_percentage,
-        "total_tickets":total_tickets
+        "total_tickets":total_tickets,
+         "category_count":category_count,
+        "category_percentage":category_percentage
          },
     )
 
