@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App Logs Viewer</title>
+    <style>
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #121212;
+            color: #e0e0e0;
+            padding: 20px;
+        }
+        h2 {
+            color: #ffffff;
+        }
+        .buttons-container {
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 8px 16px;
+            margin-right: 8px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .btn-all { background-color: #6c757d; color: white; }
+        .btn-error { background-color: #dc3545; color: white; }
+        .btn-warning { background-color: #fd7e14; color: white; }
+        .btn-info { background-color: #28a745; color: white; }
+        .btn-exception { background-color: #6f42c1; color: white; }
+
+        button:hover {
+            opacity: 0.8;
+        }
+
+        #log-container {
+            background-color: #1e1e1e;
+            border: 1px solid #333;
+            border-radius: 5px;
+            padding: 15px;
+            max-height: 600px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .log-line {
+            padding: 3px 0;
+            border-bottom: 1px solid #2a2a2a;
+        }
+
+        /* Log Colors */
+        .error { color: #ff6b6b; }
+        .warning { color: #ffa94d; }
+        .info { color: #51cf66; }
+        .exception { color: #cc5de8; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <h2>Application Logs Dashboard</h2>
+
+    <!-- Filter Buttons (Same as original) -->
+    <div class="buttons-container">
+        <button class="btn-all" onclick="filterLogs('all')">All</button>
+        <button class="btn-error" onclick="filterLogs('ERROR')">Error</button>
+        <button class="btn-warning" onclick="filterLogs('WARNING')">Warning</button>
+        <button class="btn-info" onclick="filterLogs('INFO')">Info</button>
+        <button class="btn-exception" onclick="filterLogs('EXCEPTION')">Exception</button>
+    </div>
+
+    <!-- Logs Display Area -->
+    <div id="log-container">Loading logs...</div>
+
+   <script>
+    let rawLogsArray = {{ logs | tojson | safe }};
+    let rawLogsText = rawLogsArray ? rawLogsArray.join("") : "";
+
+    function displayLogs(text, filterType) {
+        const container = document.getElementById('log-container');
+        container.innerHTML = "";
+
+        if (!text.trim()) {
+            container.innerText = "No logs available.";
+            return;
+        }
+
+        let lines = text.split('\n');
+        let currentBlockClass = ''; // State management for multi-line exceptions
+
+        lines.forEach(line => {
+            if (!line.trim()) return;
+
+            let upperLine = line.toUpperCase();
+
+            // Baseline detection
+            let detectedClass = '';
+            if (upperLine.includes('ERROR')) {
+                detectedClass = 'error';
+            } else if (upperLine.includes('WARNING')) {
+                detectedClass = 'warning';
+            } else if (upperLine.includes('INFO')) {
+                detectedClass = 'info';
+            } else if (upperLine.includes('TRACEBACK') || upperLine.includes('EXCEPTION')) {
+                detectedClass = 'exception';
+            }
+
+            // Exception/Traceback multi-line handling logic
+            if (detectedClass === 'exception') {
+                currentBlockClass = 'exception';
+            } else if (currentBlockClass === 'exception') {
+                // Continuation lines of Traceback (File paths, code snippets, Error name)
+                if (line.startsWith(' ') || line.startsWith('File') || upperLine.includes('ERROR:')) {
+                    detectedClass = 'exception';
+                } else if (detectedClass !== '') {
+                    currentBlockClass = detectedClass; // Switch to new log level if found
+                } else {
+                    detectedClass = 'exception';
+                }
+            } else if (detectedClass !== '') {
+                currentBlockClass = detectedClass;
+            }
+
+            let activeClass = detectedClass || currentBlockClass;
+
+            // Filtering Output
+            if (filterType === 'all' || (activeClass && activeClass.toUpperCase() === filterType.toUpperCase())) {
+                let div = document.createElement('div');
+                div.className = `log-line ${activeClass}`;
+                div.innerText = line;
+                container.appendChild(div);
+            }
+        });
+    }
+
+    function filterLogs(type) {
+        displayLogs(rawLogsText, type);
+    }
+
+    displayLogs(rawLogsText, 'all');
+</script>
+
+</body>
+</html>

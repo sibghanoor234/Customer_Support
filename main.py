@@ -1,26 +1,57 @@
 import json
+from pathlib import Path
+import time
+from starlette.templating import Jinja2Templates
+
+from config.logger_config import logger
+
 
 from datetime import datetime
 from fastapi import Request
 from config.templates_config import templates
 from fastapi.staticfiles import StaticFiles
 
-from fastapi import FastAPI, status
-from starlette.responses import JSONResponse
+import os
+
+from fastapi import FastAPI, status ,BackgroundTasks
+from starlette.responses import JSONResponse, FileResponse, HTMLResponse, PlainTextResponse
 from utils import read_tickets_json_file
 from schemas import TicketsInput
 app=FastAPI()
+logger.info("Customer Support API started")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+# Log file path setup (Absolute Path)
+BASE_DIR = Path(__file__).resolve().parent
+LOG_FILE_PATH = BASE_DIR / "logs" / "app.log"
+###############################################################################
+@app.get("/logs", response_class=HTMLResponse)
+async def show_logs(request: Request):
+    logs_content = []
+
+    # Check karein ke log file exist karti hai ya nahi
+    if LOG_FILE_PATH.exists():
+        with open(LOG_FILE_PATH, "r", encoding="utf-8") as file:
+            logs_content = file.readlines()
+    else:
+        logger.warning("Log file not found at path: %s", LOG_FILE_PATH)
+        logs_content = ["Log file nahi mili."]
+
+    return templates.TemplateResponse(
+        request=request,
+        name="logs.html",
+        context={"logs": logs_content}
+    )
+################################################################################3
 @app.get("/return-all-tickets")
 def return_all_tickets():
     tickets=read_tickets_json_file()
     all_tickets = []
     if  tickets:
         all_tickets.append(tickets)
-        print("ticket found")
+        logger.info("ticket found")
     else:
-         print("ticket  not found")
+         logger.info("ticket  not found")
     return {"tickets": tickets}
 
 
@@ -36,18 +67,20 @@ def get_tickets(status: str = None,
             match=True
             if status:
                 if ticket["status"].lower() == status.lower():
-                    print("status matched")
+                    logger.info("Fetching tickets")
             if priority:
                 if ticket["priority"].lower() == priority.lower():
-                    print("prority matched")
+                    logger.info("prority matched")
             if category:
                 if ticket["category"].lower() == category.lower():
-                    print("category matched")
+                    logger.info("category matched")
             if customer_name:
                 if ticket["customer_name"].lower() == customer_name.lower():
-                    print("customer name matched")
+                    logger.info("customer name matched")
             if match:
                 filtered_tickets.append(ticket)
+                logger.info("Tickets found")
+            logger.warning("No tickets found")
             match = False
     if filtered_tickets:
                 return JSONResponse(
@@ -64,13 +97,27 @@ def get_tickets(status: str = None,
                 "message": "tickets  not found",
             })
 ############################################
-@app.post("/tickets")
-def create_ticket(ticket: TicketsInput):
+def send_email_background( customer_name:str,ticket_id: int):
+    # 10 seconds ka pause
+    time.sleep(6)
+    # Email bhejne ka log
+    logger.info(f"Email sent to {customer_name} for Ticket #{ticket_id}")
+    time.sleep(6)
+    logger.info("creadted sucsessfully")
+@app.post("/add-tickets")
+def create_ticket(ticket: TicketsInput,background_tasks: BackgroundTasks):
     tickets = read_tickets_json_file()
+
+    # Safe ticket list check
+    if not isinstance(tickets, list):
+        tickets = []
+
+    # Safe Dynamic ID generation
     if tickets:
-        new_ticket_id = tickets[-1]["id"] + 1
+        new_ticket_id = max(t.get("id", 0) for t in tickets) + 1
     else:
         new_ticket_id = 1
+
     new_ticket = {
         "id": new_ticket_id,
         "customer_name": ticket.customer_name,
@@ -82,8 +129,13 @@ def create_ticket(ticket: TicketsInput):
     }
 
     tickets.append(new_ticket)
-    with open("tickets.json", "w") as file:
+
+    with open("tickets.json", "w", encoding="utf-8") as file:
         json.dump(tickets, file, indent=4)
+
+    logger.info(f"Ticket {new_ticket_id} created successfully")
+    # Function name ke baad Customer Name aur New Ticket ID dono pass karein
+    background_tasks.add_task(send_email_background, ticket.customer_name, new_ticket_id)
     return JSONResponse(
         status_code=201,
         content={
@@ -94,9 +146,8 @@ def create_ticket(ticket: TicketsInput):
 ############################################################
 @app.get("/tickets/statistics")
 def ticket_statistics():
-
+    logger.info("Calculating ticket statistics")
     tickets = read_tickets_json_file()
-
     total_tickets = len(tickets)
 
     open_tickets = 0
@@ -125,7 +176,7 @@ def ticket_statistics():
 
         if ticket["priority"].lower() == "high":
             high_priority_tickets += 1
-
+    logger.info("Ticket statistics calculated successfully")
     return JSONResponse(
         status_code=200,
         content={
@@ -196,8 +247,8 @@ def ticket_statistics():
 #################################################################
 @app.post("/return-detail")
 def return_detail(tickets: TicketsInput):
-        print("/return-detail api is called")
-        print(tickets)
+        logger.info("/return-detail api is called")
+        logger.info(tickets)
         tickets = read_tickets_json_file()
         return JSONResponse(
             status_code=status.HTTP_200_OK,
@@ -210,7 +261,7 @@ def return_detail(tickets: TicketsInput):
 @app.get("/dashboard")
 async def dashboard(request:Request, ):
     tickets=read_tickets_json_file()
-    print("TOTAL =", len(tickets))
+    logger.info("TOTAL =", len(tickets))
     total_tickets = len(tickets)
     category_count = {}
 
@@ -221,8 +272,10 @@ async def dashboard(request:Request, ):
             category_count[category] =0
 
         category_count[category] += 1
-    print("category_count",category_count)
-    print("CATEGORY TOTAL =", sum(category_count.values()))
+        if not tickets:
+            logger.warning("Tickets not found")
+    logger.info(f"category_count = {category_count}")
+    logger.info(f"CATEGORY TOTAL = {sum(category_count.values())}")
     category_percentage={}
     for category, count in category_count.items():
         percentage = (count / total_tickets) * 100
